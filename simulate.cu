@@ -1,24 +1,36 @@
 #include <iostream>
+#include <string>
 
 #include <cuda.h>
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
 
-#include "animal.h"
-
-int const DIM = 1024;
-int const ANIMAL_START_COUNT = 100;
+#include "world.h"
 
 __global__ void KernelRunSim(int * devPtr, size_t pitch)
 {
 
 }
 
-int main(void)
-{
-    World * world = new World(1, 1, 1);
+int getNumberInput(string message);
 
-    Animal * a = new Animal[ANIMAL_START_COUNT];
+int main() {
+	cout << "Welcome to the Evolution Simulator. Please enter your parameters to begin the simulation..." << endl;
+	int rounds = getNumberInput("Enter the number of rounds: ");
+	int numAnimals = getNumberInput("Enter the number of animals: ");
+	int dim = getNumberInput("Enter the dimension of the world board: ");
+	int food = getNumberInput("Enter the number of spaces that have food: ");
 
-    return 0;
+	// Initialize world
+	World* world = new World(food, numAnimals, dim);
+
+
+	return 0;
+}
+
+int getNumberInput(string message) {
+	cout << message;
+	string input = "";
+	getline(cin, input);
+	return stoi(input);
 }
