@@ -6,6 +6,12 @@
 #include <thrust/device_vector.h>
 
 #include "world.h"
+#include "animal.h"
+
+using std::cin;
+using std::cout;
+using std::endl;
+using std::string;
 
 __global__ void KernelRunSim(int * devPtr, size_t pitch)
 {
@@ -20,6 +26,9 @@ int main() {
 	int numAnimals = getNumberInput("Enter the number of animals: ");
 	int dim = getNumberInput("Enter the dimension of the world board: ");
 	int food = getNumberInput("Enter the number of spaces that have food: ");
+
+	thrust::host_vector<Animal> animals_h(numAnimals);
+    thrust::device_vector<Animal> animals_d = animals_h;
 
 	// Initialize world
 	World* world = new World(food, numAnimals, dim);
