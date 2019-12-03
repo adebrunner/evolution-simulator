@@ -22,12 +22,12 @@ public:
 	int getEnergy() { return this->energy; }
     int getHomeLocation() { return this->home_location; }
 
+
 private:
-    int strength; // Determines if an animal can eat another encountered animal;
-    int speed;    // Determines how many blocks an animal can move per unit of energy
-    int energy;   // Determines how many moves an animal can make. Should be inversely proportional
-                  // to strength
-    int home_location;
+    int strength;      // Determines if an animal can eat another encountered animal;
+    int speed;         // Determines how many blocks an animal can move per unit of energy
+    int energy;        // Determines how many moves an animal can make. Should be inversely proportional
+                       // to strength
 };
 
 #endif
