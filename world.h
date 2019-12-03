@@ -1,6 +1,9 @@
 #ifndef WORLD_H
 #define WORLD_H
 
+#include <stdlib.h>
+#include <time.h>
+
 #include "space.h"
 
 class World 
@@ -12,7 +15,7 @@ public:
         setNumAnimals(a);
         setDim(d);
 
-		// Initialize the board with open 
+		// Initialize the board with open spaces
         this->board = (Space*)malloc(sizeof(Space)*this->dim*this->dim);
         for (int i = 0; i < d*d; i++) {
 			Space space;
@@ -28,6 +31,21 @@ public:
 	int getFood() { return this->food; }
 	int getNumAnimals() { return this->num_animals; }
 	int getDim() { return this->dim; }
+	int getBoardSize() { return this->dim*this->dim; }
+
+    // Place food in random spaces on board
+    void populateFood() { 
+        // Random seed
+        srand(time(NULL));
+        int numFood = 0;
+        while(numFood < this->food) {
+            int index = rand() % this->getBoardSize();
+            if ((*(this->board + index)).getContainsFood() == false) {
+                (*(this->board + index)).putFood();
+                numFood += 1;
+            }
+        }
+    }
 
 private:
     int food; // Determines the amount of spaces that contain food

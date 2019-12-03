@@ -24,6 +24,7 @@ int main() {
 	// Initialize world
 	World* world = new World(food, numAnimals, dim);
 
+	world->populateFood();
 
 	return 0;
 }
