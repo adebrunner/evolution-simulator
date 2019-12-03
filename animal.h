@@ -15,6 +15,10 @@ public:
     void setSpeed(int speed) { this->speed = speed; }
     void setEnergy(int energy) { this->energy = energy; }
 
+	int getStrength() { return this->strength; }
+	int getSpeed() { return this->speed; }
+	int getEnergy() { return this->energy; }
+
 private:
     int strength; // Determines if an animal can eat another encountered anima;
     int speed;    // Determines how many blocks an animal can move per unit of energy

@@ -11,6 +11,8 @@ public:
         setFood(f);
         setNumAnimals(a);
         setDim(d);
+
+		// Initialize the board with open 
         this->board = (Space*)malloc(sizeof(Space)*this->dim*this->dim);
         for (int i = 0; i < d*d; i++) {
 			Space space;
@@ -23,6 +25,9 @@ public:
     void setDim(int dim) { this->dim = dim; }
 
     Space* getBoard() { return this->board; }
+	int getFood() { return this->food; }
+	int getNumAnimals() { return this->num_animals; }
+	int getDim() { return this->dim; }
 
 private:
     int food; // Determines the amount of spaces that contain food
