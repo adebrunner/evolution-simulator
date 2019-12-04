@@ -13,7 +13,7 @@ public:
 
     // TODO, perhaps we can remove these. Should just use setters below imo.
     void putFood() { this->contains_food = true; }
-    void putAnimal() { this->contains_animal = true; }
+	bool putAnimal() { this->contains_animal = true; return true; }
     void makeHome() { this->is_home = true; }
 
     void setContainsFood(bool contains_food) { this->contains_food = contains_food; }
