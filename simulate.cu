@@ -32,9 +32,15 @@ void clearWorldSpaceAnimalPresent(World * world);
 int main() {
 	cout << "Welcome to the Evolution Simulator. Please enter your parameters to begin the simulation..." << endl;
 	int rounds = getNumberInput("Enter the number of rounds: ");
-	int numAnimals = getNumberInput("Enter the number of animals: ");
 	int dim = getNumberInput("Enter the dimension of the world board: ");
+	int numAnimals = getNumberInput("Enter the number of animals: ");
+	while (numAnimals > (dim * 4 + 4)) {
+		numAnimals = getNumberInput("The number of animals must be less than " + to_string((dim * 4 + 4)) + ". Enter the number of animals: ");
+	}
 	int food = getNumberInput("Enter the number of spaces that have food: ");
+	while (food > (dim*dim/4)) {
+		food = getNumberInput("The number of spaces that have food must be less than " + to_string(dim*dim / 4) + ". Enter the number of spaces that have food: ");
+	}
 
     // Initialize world
     World * world = new World(food, numAnimals, dim);
@@ -47,8 +53,7 @@ int main() {
 
     thrust::device_vector<Animal> animals_d = animals_h;
 
-    // This function currently causes a hang on my pc
-	//world->populateFood();
+	world->populateFood();
 
 	// Debugging purposes - used to see where animals are located.
 //	for(int i = 0; i < world->getHouseBoardSize(); i++)
