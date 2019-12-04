@@ -23,6 +23,12 @@ int getNumberInput(string message);
 /// Assigns animals to available starting locations (home) sequentially.
 void setAnimalStartingLocation(thrust::host_vector<Animal> & animals, int houseDim);
 
+/// Given animals location, the world notes which spaces have an animal present
+void setWorldSpaceAnimalPresent(thrust::host_vector<Animal> & animals, World * world);
+
+/// Sets all ContainsAnimal spaces in world to false.
+void clearWorldSpaceAnimalPresent(World * world);
+
 int main() {
 	cout << "Welcome to the Evolution Simulator. Please enter your parameters to begin the simulation..." << endl;
 	int rounds = getNumberInput("Enter the number of rounds: ");
@@ -37,9 +43,12 @@ int main() {
 
 	setAnimalStartingLocation(animals_h, world->getHouseDim());
 
+	setWorldSpaceAnimalPresent(animals_h, world);
+
     thrust::device_vector<Animal> animals_d = animals_h;
 
-	world->populateFood();
+    // This function currently causes a hang on my pc
+	//world->populateFood();
 
 	return 0;
 }
@@ -69,11 +78,17 @@ void setAnimalStartingLocation(thrust::host_vector<Animal> & animals, int houseD
             row++;
             counter++;
         }
-        else if(row == houseDim)
+        else if(row == (houseDim - 1))
         {
             tempLocation = (houseDim * row) + counter;
             animals[i].setLocation(tempLocation);
             counter++;
+            if(counter >= houseDim)
+            {
+                cout << "Too many animals to put on board.\n";
+                cout << "Only " << i + 1 << " animals placed.\n";
+                break;
+            }
         }
         else
         {
@@ -89,5 +104,24 @@ void setAnimalStartingLocation(thrust::host_vector<Animal> & animals, int houseD
                 counter++;
             }
         }
+    }
+}
+
+void setWorldSpaceAnimalPresent(thrust::host_vector<Animal> & animals, World * world)
+{
+    // Ensure everything is clear to begin
+    clearWorldSpaceAnimalPresent(world);
+
+    for(int i = 0; i < animals.size(); i++)
+    {
+        (world->getBoard() + animals[i].getLocation())->setContainsAnimal(true);
+    }
+}
+
+void clearWorldSpaceAnimalPresent(World * world)
+{
+    for(int i = 0; i < world->getHouseDim(); i++)
+    {
+        (world->getBoard() + i)->setContainsAnimal(false);
     }
 }
