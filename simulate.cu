@@ -50,6 +50,15 @@ int main() {
     // This function currently causes a hang on my pc
 	//world->populateFood();
 
+	// Debugging purposes - used to see where animals are located.
+//	for(int i = 0; i < world->getHouseBoardSize(); i++)
+//    {
+//	    if((world->getBoard() + i)->getContainsAnimal())
+//        {
+//	        cout << i << endl;
+//        }
+//    }
+
 	return 0;
 }
 
@@ -80,15 +89,16 @@ void setAnimalStartingLocation(thrust::host_vector<Animal> & animals, int houseD
         }
         else if(row == (houseDim - 1))
         {
+            if(counter == houseDim)
+            {
+                cout << "Too many animals to put on board.\n";
+                cout << "Only " << i << " animals placed.\n";
+                break;
+            }
+
             tempLocation = (houseDim * row) + counter;
             animals[i].setLocation(tempLocation);
             counter++;
-            if(counter >= houseDim)
-            {
-                cout << "Too many animals to put on board.\n";
-                cout << "Only " << i + 1 << " animals placed.\n";
-                break;
-            }
         }
         else
         {

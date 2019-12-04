@@ -11,6 +11,7 @@ public:
         setIsHome(h);
     }
 
+    // TODO, perhaps we can remove these. Should just use setters below imo.
     void putFood() { this->contains_food = true; }
     void putAnimal() { this->contains_animal = true; }
     void makeHome() { this->is_home = true; }
