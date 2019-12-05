@@ -1,5 +1,8 @@
-#include "../include/animal.h"
 #include <vector>
+#include <stdlib.h>
+#include <time.h>
+
+#include "../include/animal.h"
 
 void Animal::move(World* world) {
 	// Check surrounding squares to determine which are available
@@ -55,4 +58,40 @@ int Animal::pickNewLocation(World* world, std::vector<int> available) {
 	// Pick a random available spot
 	srand(time(NULL));
 	return available.at(rand() % available.size());
+}
+
+void Animal::mutateAnimal(void)
+{
+    int thirty_percent = 0;
+    int current_speed = this->getSpeed();
+    int new_val = 0;
+
+    srand(time(NULL));
+    // Get thirty percent of speed
+    thirty_percent = current_speed * 0.3;
+    // Ensure it is at least 1
+    (thirty_percent == 0) ? 1 : thirty_percent;
+
+    // To allow for a negative change [-thirty percent, thirty percent],
+    // we generate a value from 0 to 2*thirty percent then subtract thirty percent
+    new_val = rand() % (thirty_percent * 2);
+    new_val -= thirty_percent;
+
+    this->setSpeed(current_speed + new_val);
+
+    // We inversely change energy by the amount speed changed * const factor.
+    this->setEnergy(this->getEnergy() - (thirty_percent * SPEED_TO_ENERGY_FACTOR));
+}
+
+Animal Animal::produceOffspring(void)
+{
+    // TODO: need to enforce this only happening when the animal has 2 food.
+    // TODO: Need to figure out where to put animal as well.
+    // Can do in simulation.
+
+    // Give parent's stats to child
+    Animal new_animal(this->getSpeed(), this->getEnergy());
+    // But add a mutation
+    new_animal.mutateAnimal();
+    return new_animal;
 }

@@ -4,6 +4,9 @@
 #include "world.h"
 #include <vector>
 
+// For every increase of 1 in speed, we decrease energy by 3 and vice versa.
+int const SPEED_TO_ENERGY_FACTOR = 3;
+
 class Animal
 {
 public:
@@ -27,9 +30,11 @@ public:
     int getLocation() { return this->location; }
 
     void move(World* world);
+    Animal produceOffspring(void);
 
 private:
 	int pickNewLocation(World* world, std::vector<int> available);
+	void mutateAnimal(void);
 
     int food;          // Keeps track of how many pieces of food an animal has
     int speed;         // Determines how many blocks an animal can move per unit of energy

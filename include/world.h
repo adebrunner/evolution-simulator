@@ -6,6 +6,7 @@
 
 #include "space.h"
 
+// TODO: Create cpp file for this and update makefile
 class World 
 {
 public:
