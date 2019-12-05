@@ -57,15 +57,7 @@ int test()
     thrust::device_vector<Animal> animals_d = animals_h;
 
 	world->populateFood();
-
-	// Debugging purposes - used to see where animals are located.
-//	for(int i = 0; i < world->getHouseBoardSize(); i++)
-//    {
-//	    if((world->getBoard() + i)->getContainsAnimal())
-//        {
-//	        cout << i << endl;
-//        }
-//    }
+	// https://stackoverflow.com/questions/40682163/cuda-copy-inherited-class-object-to-device
 
 	return 0;
 }
