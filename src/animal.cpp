@@ -1,4 +1,4 @@
-#include "animal.h"
+#include "../include/animal.h"
 #include <vector>
 
 void Animal::move(World* world) {

@@ -5,8 +5,9 @@
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
 
-#include "world.h"
-#include "animal.h"
+#include "../include/world.h"
+#include "../include/animal.h"
+#include "../include/simulate.cuh"
 
 using std::cin;
 using std::cout;
@@ -14,29 +15,30 @@ using std::endl;
 using std::string;
 using std::to_string;
 
-__global__ void KernelRunSim(int * devPtr, size_t pitch)
+//__global__ void KernelRunSim(int * devPtr, size_t pitch)
+//{
+//
+//}
+//
+//int getNumberInput(string message);
+//
+///// Assigns animals to available starting locations (home) sequentially.
+//void setAnimalStartingLocation(thrust::host_vector<Animal> & animals, int houseDim);
+//
+///// Given animals location, the world notes which spaces have an animal present
+//void setWorldSpaceAnimalPresent(thrust::host_vector<Animal> & animals, World * world);
+//
+///// Sets all ContainsAnimal spaces in world to false.
+//void clearWorldSpaceAnimalPresent(World * world);
+
+int test()
 {
-
-}
-
-int getNumberInput(string message);
-
-/// Assigns animals to available starting locations (home) sequentially.
-void setAnimalStartingLocation(thrust::host_vector<Animal> & animals, int houseDim);
-
-/// Given animals location, the world notes which spaces have an animal present
-void setWorldSpaceAnimalPresent(thrust::host_vector<Animal> & animals, World * world);
-
-/// Sets all ContainsAnimal spaces in world to false.
-void clearWorldSpaceAnimalPresent(World * world);
-
-int main() {
 	cout << "Welcome to the Evolution Simulator. Please enter your parameters to begin the simulation..." << endl;
 	int rounds = getNumberInput("Enter the number of rounds: ");
 	int dim = getNumberInput("Enter the dimension of the world board: ");
-	int numAnimals = getNumberInput("Enter the number of animals: ");
-	while (numAnimals > (dim * 4 + 4)) {
-		numAnimals = getNumberInput("The number of animals must be less than " + to_string((dim * 4 + 4)) + ". Enter the number of animals: ");
+	int num_animals = getNumberInput("Enter the number of animals: ");
+	while (num_animals > (dim * 4 + 4)) {
+		num_animals = getNumberInput("The number of animals must be less than " + to_string((dim * 4 + 4)) + ". Enter the number of animals: ");
 	}
 	int food = getNumberInput("Enter the number of spaces that have food: ");
 	while (food > (dim*dim/4)) {
@@ -44,9 +46,9 @@ int main() {
 	}
 
     // Initialize world
-    World * world = new World(food, numAnimals, dim);
+    World * world = new World(food, num_animals, dim);
 
-	thrust::host_vector<Animal> animals_h(numAnimals);
+	thrust::host_vector<Animal> animals_h(num_animals);
 
 	setAnimalStartingLocation(animals_h, world->getHouseDim());
 
@@ -76,40 +78,40 @@ int getNumberInput(string message)
 	return stoi(input);
 }
 
-void setAnimalStartingLocation(thrust::host_vector<Animal> & animals, int houseDim)
+void setAnimalStartingLocation(thrust::host_vector<Animal> & animals, int house_dim)
 {
     int row = 0;
     int counter = 0;
-    int tempLocation = 0;
+    int temp_location = 0;
     for(int i = 0; i < animals.size(); i++)
     {
-        if (i < houseDim)
+        if (i < house_dim)
         {
             animals[i].setLocation(i);
         }
-        else if(i == houseDim)
+        else if(i == house_dim)
         {
             animals[i].setLocation(i);
             row++;
             counter++;
         }
-        else if(row == (houseDim - 1))
+        else if(row == (house_dim - 1))
         {
-            if(counter == houseDim)
+            if(counter == house_dim)
             {
                 cout << "Too many animals to put on board.\n";
                 cout << "Only " << i << " animals placed.\n";
                 break;
             }
 
-            tempLocation = (houseDim * row) + counter;
-            animals[i].setLocation(tempLocation);
+            temp_location = (house_dim * row) + counter;
+            animals[i].setLocation(temp_location);
             counter++;
         }
         else
         {
-            tempLocation = (houseDim * row) + (counter * (houseDim - 1));
-            animals[i].setLocation(tempLocation);
+            temp_location = (house_dim * row) + (counter * (house_dim - 1));
+            animals[i].setLocation(temp_location);
             if(counter == 1)
             {
                 row++;
