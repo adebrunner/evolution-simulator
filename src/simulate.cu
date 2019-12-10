@@ -15,21 +15,22 @@ using std::endl;
 using std::string;
 using std::to_string;
 
-//__global__ void KernelRunSim(int * devPtr, size_t pitch)
-//{
-//
-//}
-//
-//int getNumberInput(string message);
-//
-///// Assigns animals to available starting locations (home) sequentially.
-//void setAnimalStartingLocation(thrust::host_vector<Animal> & animals, int houseDim);
-//
-///// Given animals location, the world notes which spaces have an animal present
-//void setWorldSpaceAnimalPresent(thrust::host_vector<Animal> & animals, World * world);
-//
-///// Sets all ContainsAnimal spaces in world to false.
-//void clearWorldSpaceAnimalPresent(World * world);
+__global__ void KernelRunSim(Animal * animals_vec_d, World * world_d)
+{
+    //cout << world_d->getBoard()->getIsHome() << endl;
+    bool x = world_d->getBoard()->getIsHome();
+    printf("%s\n", x ? "true" : "false");
+    //printf(world_d->getBoard()->getIsHome() + "\n");
+    //printf("\tCopying data\n");
+    return;
+}
+
+// TODO: Make it so this doesn't need to be done.
+__global__ void SetSpace(World * world_d, Space * b)
+{
+    world_d->setBoard(b);
+    return;
+}
 
 int test()
 {
@@ -46,18 +47,42 @@ int test()
 	}
 
     // Initialize world
-    World * world = new World(food, num_animals, dim);
+    World * world_h = new World(food, num_animals, dim);
 
 	thrust::host_vector<Animal> animals_h(num_animals);
 
-	setAnimalStartingLocation(animals_h, world->getHouseDim());
+	setAnimalStartingLocation(animals_h, world_h->getHouseDim());
 
-	setWorldSpaceAnimalPresent(animals_h, world);
+	setWorldSpaceAnimalPresent(animals_h, world_h);
 
     thrust::device_vector<Animal> animals_d = animals_h;
+    Animal * animals_pointer_d = thrust::raw_pointer_cast(animals_d.data());
 
-	world->populateFood();
+	world_h->populateFood();
+
 	// https://stackoverflow.com/questions/40682163/cuda-copy-inherited-class-object-to-device
+    //Allocate storage for object onto GPU and copy host object to device
+    World * world_d;
+    cudaMalloc(&world_d,sizeof(World));
+    cudaMemcpy(world_d,&world_h,sizeof(World),cudaMemcpyHostToDevice);
+
+//Copy dynamically allocated Space objects to GPU
+    Space ** d_par;
+    int length = world_h->getHouseBoardSize();
+    d_par = new Space*[length];
+    for(int i = 0; i < length; ++i) {
+        cudaMalloc(&d_par[i],sizeof(Space));
+        cudaMemcpy(d_par[i],(world_h->getBoard() + i),sizeof(Space),cudaMemcpyHostToDevice);
+    }
+
+    // Not the best way, but we set the spaces on the device world.
+    SetSpace<<<1,1>>>(world_d, *d_par);
+
+    bool x = world_h->getBoard()->getIsHome();
+    printf("%s\n", x ? "true" : "false");
+	KernelRunSim<<<1,1>>>(animals_pointer_d, world_d);
+    printf("\t3\n");
+    cudaDeviceSynchronize();
 
 	return 0;
 }

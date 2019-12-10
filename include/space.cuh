@@ -17,7 +17,7 @@ public:
     /// Needed to overload this due to atomic variables.
     Space operator=(const Space& s);
 
-    bool putAnimal(void);
+    __device__ __host__ bool putAnimal(void);
     void putFood(void) { this->contains_food = true; }
     void makeHome(void) { this->is_home = true; }
 
@@ -25,9 +25,9 @@ public:
     void setContainsAnimal(bool contains_animal) {this->contains_animal = contains_animal; }
     void setIsHome(bool is_home) {this->is_home = is_home; }
 
-    bool getContainsFood(void) { return this->contains_food; }
-    bool getContainsAnimal(void) { return this->contains_animal; }
-    bool getIsHome(void) { return this->is_home; }
+    __device__ __host__ bool getContainsFood(void) { return this->contains_food; }
+    __device__ __host__ bool getContainsAnimal(void) { return this->contains_animal; }
+    __device__ __host__ bool getIsHome(void) { return this->is_home; }
 
 
 private:

@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include "space.h"
+#include "space.cuh"
 
 // TODO: Create cpp file for this and update makefile
 class World 
@@ -37,8 +37,9 @@ public:
     void setNumAnimals(int num_animals) { this->num_animals = num_animals; }
     void setPlayableDim(int dim) { this->playable_dim = dim; }
 	void setHouseDim(int dim) { this->house_dim = dim; }
+	__device__ __host__ void setBoard(Space * b){this->board = b;}
 
-    Space* getBoard() { return this->board; }
+    __device__ __host__ Space * getBoard() { return this->board; }
 	int getFood() { return this->food; }
 	int getNumAnimals() { return this->num_animals; }
 	int getPlayableDim() { return this->playable_dim; }
@@ -47,7 +48,7 @@ public:
 	int getHouseBoardSize() { return this->house_dim*this->house_dim; }
 
     // Place food in random spaces on board
-    void populateFood() { 
+    void populateFood() {
         // Random seed
         srand(time(NULL));
         int numFood = 0;

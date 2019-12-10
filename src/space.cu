@@ -1,4 +1,4 @@
-#include "../include/space.h"
+#include "../include/space.cuh"
 
 Space::Space(bool f, bool a, bool h)
 {
@@ -22,7 +22,7 @@ Space Space::operator=(const Space &s)
     return this;
 }
 
-bool Space::putAnimal(void)
+__device__ __host__ bool Space::putAnimal(void)
 {
     bool val = false;
 

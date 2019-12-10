@@ -22,4 +22,4 @@ void clearWorldSpaceAnimalPresent(World * world);
 
 int test();
 
-__global__ void KernelRunSim(int * devPtr, size_t pitch);
+__global__ void KernelRunSim(Animal * animals_vec_d, World * world_d);
