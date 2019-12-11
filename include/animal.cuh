@@ -11,7 +11,7 @@ int const SPEED_TO_ENERGY_FACTOR = 3;
 class Animal
 {
 public:
-    Animal(int sp=1, int e=1, int l=0)
+    __device__ __host__ Animal(int sp=1, int e=1, int l=0)
     {
 		setFood(0);
         setSpeed(sp);
@@ -19,22 +19,23 @@ public:
         setLocation(l);
     }
 
-    __device__ void setFood(int food) { this->food = food; }
-    __device__ void setSpeed(int speed) { this->speed = speed; }
-    __device__ void setEnergy(int energy) { this->energy = energy; }
-    __device__ void setLocation(int l) { this->location = l; }
-    __device__ void pickupFood() { this->food += 1; }
+    __device__ __host__ void setFood(int food) { this->food = food; }
+    __device__ __host__ void setSpeed(int speed) { this->speed = speed; }
+    __device__ __host__ void setEnergy(int energy) { this->energy = energy; }
+    __device__ __host__ void setLocation(int l) { this->location = l; }
+    __device__ __host__ void pickupFood() { this->food += 1; }
 
-    __device__ int getFood() { return this->food; }
-    __device__ int getSpeed() { return this->speed; }
-    __device__ int getEnergy() { return this->energy; }
-    __device__ int getLocation() { return this->location; }
+    __device__ __host__ int getFood() { return this->food; }
+    __device__ __host__ int getSpeed() { return this->speed; }
+    __device__ __host__ int getEnergy() { return this->energy; }
+    __device__ __host__ int getLocation() { return this->location; }
 
-    __device__ void move(World* world);
+    __device__  void move(World* world);
     __device__ Animal produceOffspring(void);
 
 private:
     __device__ int pickNewLocation(World* world, int * available, int options_left);
+    __device__ void removeIndex(int index, int * arr, int & options_left);
     __device__ void mutateAnimal(void);
 
     int food;          // Keeps track of how many pieces of food an animal has

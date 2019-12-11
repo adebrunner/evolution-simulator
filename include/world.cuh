@@ -48,7 +48,7 @@ public:
     __device__ __host__ int getHouseBoardSize() { return this->house_dim*this->house_dim; }
 
     // Place food in random spaces on board
-    __device__ __host__ void populateFood() {
+    __host__ void populateFood() {
         // Random seed
         srand(time(NULL));
         int numFood = 0;

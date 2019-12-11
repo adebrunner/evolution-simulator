@@ -7,7 +7,7 @@ Space::Space(bool f, bool a, bool h)
     setIsHome(h);
 }
 
-Space::Space(const Space& s):
+Space::Space(const Space& s)
 {
     this->is_home = s.is_home;
     this->contains_animal = s.contains_animal;
@@ -16,13 +16,13 @@ Space::Space(const Space& s):
 
 Space Space::operator=(const Space &s)
 {
-    this->contains_animal.store(s.contains_animal.load());
-    this->contains_food.store(s.contains_food.load());
+    this->contains_animal = s.contains_animal;
+    this->contains_food = s.contains_food;
     this->is_home = s.is_home;
     return this;
 }
 
-__device__ __host__ bool Space::putAnimal(void)
+__device__  bool Space::putAnimal(void)
 {
     int val_to_store = 1;
     int val_already_stored = 0;

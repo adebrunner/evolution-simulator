@@ -8,65 +8,45 @@
 __device__ void Animal::move(World* world) {
     int options_left = 4;
 	// Check surrounding squares to determine which are available
-	int * surrounding = new int(options_left);
-	int * temp = nullptr;
+	int * available = new int(options_left);
+
 	available[0] = getLocation() + 1;
     available[1] = getLocation() - 1;
     available[2] = getLocation() - world->getHouseDim();
     available[3] = getLocation() + world->getHouseDim();
 
-	thrust::device_vector<int> surrounding(tempArray, tempArray+3);
-
-	for (int i = 0; i < surrounding.size(); i++) {
+	for (int i = 0; i < options_left; i++)
+	{
 		// If the space is outside bounds or has an animal in it, we can't move there
-		if (surrounding[i] >= 0 &&
-			surrounding[i] < world->getHouseBoardSize()) {
-
-			available.push_back(surrounding[i]);
+		if (available[i] < 0 &&
+		available[i] > world->getHouseBoardSize())
+		{
+            removeIndex(i, available, options_left);
 		}
-		else
-        {
-		    temp = new int(options_left);
-		    int it = 0;
-		    for(int j = 0; j < options_left; j++)
-            {
-		        if (it == i)
-                {
-		            it++;
-                }
-		        else
-                {
-		            temp[it] = available[it];
-		            it++;
-                }
-            }
-            options_left -= 1;
-		    delete [] available;
-		    available = temp;
-		    temp = nullptr;
-        }
 	}
 
-	int newLocation = this->pickNewLocation(world, available);
+	int newLocation = this->pickNewLocation(world, available, options_left);
 
 	// Update the world to reflect that an animal is now in this space
 	while (!(*(world->getBoard() + newLocation)).putAnimal()) {
-		for (int i = 0; i < available.size(); i++) {
-			if (available[i] == newLocation) {
-				available.erase(available.begin() + i);
+		for (int i = 0; i < options_left; i++)
+		{
+			if (available[i] == newLocation)
+			{
+                removeIndex(i, available, options_left);
 
 				// If you can't move to any immediate spaces, decrease energy and stay put
-				if (available.size() == 0) {
+				if (options_left == 0) {
 					return;
 				}
 			}
 		}
 
-		newLocation = this->pickNewLocation(world, available);
+		newLocation = this->pickNewLocation(world, available, options_left);
 	}
 
 	// Pick a open location and assign an animal to it
-	this->setLocation(newLocation);	
+	this->setLocation(newLocation);
 
 	// If there was food in the space, the animal picks it up
 	if ((*(world->getBoard() + this->getLocation())).getContainsFood()) {
@@ -75,7 +55,7 @@ __device__ void Animal::move(World* world) {
 	}
 }
 
-__device__ int Animal::pickNewLocation(World* world, int available, int options_left) {
+__device__ int Animal::pickNewLocation(World* world, int * available, int options_left) {
 	for (int i = 0; i < options_left; i++) {
 		if ((*(world->getBoard() + available[i])).getContainsFood()) {
 			// move to the first location found that contains food
@@ -132,4 +112,27 @@ __device__ Animal Animal::produceOffspring(void)
     // But add a mutation
     new_animal.mutateAnimal();
     return new_animal;
+}
+
+__device__ void removeIndex(int index, int * arr, int & options_left)
+{
+    int it = 0;
+    int * temp = nullptr;
+    temp = new int(options_left);
+    for(int j = 0; j < options_left; j++)
+    {
+        if (it == index)
+        {
+            it++;
+        }
+        else
+        {
+            temp[it] = arr[it];
+            it++;
+        }
+    }
+    options_left -= 1;
+    delete [] arr;
+    arr = temp;
+    temp = nullptr;
 }

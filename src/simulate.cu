@@ -18,14 +18,15 @@ using std::to_string;
 __global__ void KernelRunSim(Animal * animals_vec_d, World * world_d)
 {
     int index = threadIdx.x + blockIdx.x * blockDim.x;
-    //cout << world_d->getBoard()->getIsHome() << endl;
-    //bool x = world_d->getBoard()->getIsHome();
-    //printf("%s\n", x ? "true" : "false");
-    //printf(world_d->getBoard()->getIsHome() + "\n");
-    //printf("\tCopying data\n");
+//    //cout << world_d->getBoard()->getIsHome() << endl;
+//    //bool x = world_d->getBoard()->getIsHome();
+//    //printf("%s\n", x ? "true" : "false");
+//    //printf(world_d->getBoard()->getIsHome() + "\n");
+//    //printf("\tCopying data\n");
     for(int i = 0; i< 5; i++)
     {
-        animals_vec_d[index].move(world_d);
+        //(animals_vec_d[index]).move(world_d);
+        world_d->getBoard()->putAnimal();
     }
     return;
 }
@@ -81,9 +82,16 @@ int test()
     }
 
     // Not the best way, but we set the spaces on the device world.
-    SetSpace<<<1,1>>>(world_d, *d_par);
+    SetSpace<<<1,1 >>>(world_d, *d_par);
+    cudaDeviceSynchronize();
 
-	KernelRunSim<<<num_animals/512,512>>>(animals_pointer_d, world_d);
+    int grid = 1;
+    if((num_animals / 512) > 1)
+    {
+        grid = num_animals / 512;
+    }
+
+	KernelRunSim<<<grid,512>>>(animals_pointer_d, world_d);
     printf("\t3\n");
     cudaDeviceSynchronize();
 

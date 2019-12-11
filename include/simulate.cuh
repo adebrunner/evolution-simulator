@@ -1,8 +1,11 @@
+#ifndef SIMULATE_H
+#define SIMULATE_H
 #include <string>
 
 #include <cuda.h>
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
+
 
 #include "world.cuh"
 #include "animal.cuh"
@@ -23,3 +26,5 @@ void clearWorldSpaceAnimalPresent(World * world);
 int test();
 
 __global__ void KernelRunSim(Animal * animals_vec_d, World * world_d);
+
+#endif
