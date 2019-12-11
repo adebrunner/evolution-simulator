@@ -1,10 +1,6 @@
 #ifndef SPACE_H
 #define SPACE_H
 
-#include <atomic>
-
-using std::atomic;
-
 class Space
 {
 public:
@@ -22,17 +18,17 @@ public:
     void makeHome(void) { this->is_home = true; }
 
     void setContainsFood(bool contains_food) { this->contains_food = contains_food; }
-    void setContainsAnimal(bool contains_animal) {this->contains_animal = contains_animal; }
+    void setContainsAnimal(bool contains_animal) {this->contains_animal = (contains_animal == true); }
     void setIsHome(bool is_home) {this->is_home = is_home; }
 
     __device__ __host__ bool getContainsFood(void) { return this->contains_food; }
-    __device__ __host__ bool getContainsAnimal(void) { return this->contains_animal; }
+    __device__ __host__ bool getContainsAnimal(void) { return this->contains_animal == 1; }
     __device__ __host__ bool getIsHome(void) { return this->is_home; }
 
 
 private:
-    atomic<bool> contains_food;
-    atomic<bool> contains_animal;
+    bool contains_food;
+    int contains_animal; // This is being set to an int as cuda does not have atomic exchange on boolean.
     bool is_home;
 };
 

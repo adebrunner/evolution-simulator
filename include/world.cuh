@@ -33,22 +33,22 @@ public:
         }
     }
 
-    void setFood(int food) { this->food = food; }
-    void setNumAnimals(int num_animals) { this->num_animals = num_animals; }
-    void setPlayableDim(int dim) { this->playable_dim = dim; }
-	void setHouseDim(int dim) { this->house_dim = dim; }
+    __device__ __host__ void setFood(int food) { this->food = food; }
+    __device__ __host__ void setNumAnimals(int num_animals) { this->num_animals = num_animals; }
+    __device__ __host__ void setPlayableDim(int dim) { this->playable_dim = dim; }
+    __device__ __host__ void setHouseDim(int dim) { this->house_dim = dim; }
 	__device__ __host__ void setBoard(Space * b){this->board = b;}
 
     __device__ __host__ Space * getBoard() { return this->board; }
-	int getFood() { return this->food; }
-	int getNumAnimals() { return this->num_animals; }
-	int getPlayableDim() { return this->playable_dim; }
-	int getHouseDim() { return this->house_dim; }
-	int getPlayableBoardSize() { return this->playable_dim*this->playable_dim; }
-	int getHouseBoardSize() { return this->house_dim*this->house_dim; }
+    __device__ __host__ int getFood() { return this->food; }
+    __device__ __host__ int getNumAnimals() { return this->num_animals; }
+    __device__ __host__ int getPlayableDim() { return this->playable_dim; }
+    __device__ __host__ int getHouseDim() { return this->house_dim; }
+    __device__ __host__ int getPlayableBoardSize() { return this->playable_dim*this->playable_dim; }
+    __device__ __host__ int getHouseBoardSize() { return this->house_dim*this->house_dim; }
 
     // Place food in random spaces on board
-    void populateFood() {
+    __device__ __host__ void populateFood() {
         // Random seed
         srand(time(NULL));
         int numFood = 0;

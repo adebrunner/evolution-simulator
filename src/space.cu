@@ -8,10 +8,10 @@ Space::Space(bool f, bool a, bool h)
 }
 
 Space::Space(const Space& s):
-contains_animal(s.contains_animal.load()),
-contains_food(s.contains_food.load())
 {
     this->is_home = s.is_home;
+    this->contains_animal = s.contains_animal;
+    this->contains_food = s.contains_food;
 }
 
 Space Space::operator=(const Space &s)
@@ -24,14 +24,13 @@ Space Space::operator=(const Space &s)
 
 __device__ __host__ bool Space::putAnimal(void)
 {
-    bool val = false;
+    int val_to_store = 1;
+    int val_already_stored = 0;
 
-    // Checks to see if contains_animal == val. If they do match,
-    // contains_animal is set to true. If they do not match (contains_animal must be true already)
-    // val is set to true.
-    this->contains_animal.compare_exchange_strong(val, true);
+    val_already_stored = atomicExch(&(this->contains_animal), val_to_store);
 
-    // Val is true only when contains_animal was already true and
-    // put animal failed.
-    return val == false;
+    // This allows us to check if an animal was already stored. If val_ready_store == 0 (false)
+    // we know we successfully placed an animal in this space. If val_already_store != false, an animal is
+    // already in this space. putAnimal failed.
+    return val_already_stored == false;
 }

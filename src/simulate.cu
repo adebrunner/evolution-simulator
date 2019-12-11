@@ -5,8 +5,8 @@
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
 
-#include "../include/world.h"
-#include "../include/animal.h"
+#include "../include/world.cuh"
+#include "../include/animal.cuh"
 #include "../include/simulate.cuh"
 
 using std::cin;
@@ -17,11 +17,16 @@ using std::to_string;
 
 __global__ void KernelRunSim(Animal * animals_vec_d, World * world_d)
 {
+    int index = threadIdx.x + blockIdx.x * blockDim.x;
     //cout << world_d->getBoard()->getIsHome() << endl;
-    bool x = world_d->getBoard()->getIsHome();
-    printf("%s\n", x ? "true" : "false");
+    //bool x = world_d->getBoard()->getIsHome();
+    //printf("%s\n", x ? "true" : "false");
     //printf(world_d->getBoard()->getIsHome() + "\n");
     //printf("\tCopying data\n");
+    for(int i = 0; i< 5; i++)
+    {
+        animals_vec_d[index].move(world_d);
+    }
     return;
 }
 
@@ -78,9 +83,7 @@ int test()
     // Not the best way, but we set the spaces on the device world.
     SetSpace<<<1,1>>>(world_d, *d_par);
 
-    bool x = world_h->getBoard()->getIsHome();
-    printf("%s\n", x ? "true" : "false");
-	KernelRunSim<<<1,1>>>(animals_pointer_d, world_d);
+	KernelRunSim<<<num_animals/512,512>>>(animals_pointer_d, world_d);
     printf("\t3\n");
     cudaDeviceSynchronize();
 

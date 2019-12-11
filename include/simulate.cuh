@@ -4,8 +4,8 @@
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
 
-#include "../include/world.h"
-#include "../include/animal.h"
+#include "world.cuh"
+#include "animal.cuh"
 
 using std::string;
 
