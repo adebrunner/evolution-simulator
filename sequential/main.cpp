@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <chrono>
 #include "include\animal.h"
 #include "include\world.h"
 
@@ -34,6 +35,8 @@ int main()
 	while (food > (dim*dim / 2)) {
 		food = getNumberInput("The number of spaces that have food must be less than " + to_string(dim*dim / 4) + ". Enter the number of spaces that have food: ");
 	}
+
+	auto start = chrono::high_resolution_clock::now();
 
 	// Initialize world
 	World * world = new World(food, num_animals, dim);
@@ -108,7 +111,12 @@ int main()
 		// Enter the next simulation round...
 	}
 
+	auto stop = chrono::high_resolution_clock::now();
+	auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
+
 	outputResults(animals);
+
+	cout << "Time to initialize and run simulation: " << duration.count() << " microseconds";
 
 	return 0;
 }
