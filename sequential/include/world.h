@@ -62,6 +62,16 @@ public:
         }
     }
 
+	// Reset board
+	void resetBoard(int numAnimals) {
+		for (int i = 0; i < this->getHouseBoardSize(); i++) {
+			(*(this->getBoard() + i)).setContainsAnimal(false);
+			(*(this->getBoard() + i)).setContainsFood(false);
+		}
+
+		this->setNumAnimals(numAnimals);
+	}
+
 private:
     int food; // Determines the amount of spaces that contain food
     int num_animals; // Determines the starting number of animals

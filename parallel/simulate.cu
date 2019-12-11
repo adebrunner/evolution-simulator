@@ -314,9 +314,7 @@ private:
         // To allow for a negative change [-thirty percent, thirty percent],
         // we generate a value from 0 to 2*thirty percent then subtract thirty percent
         new_val = rand() % ((thirty_percent * 2) + 1);
-        //cout << new_val << endl;
         new_val -= thirty_percent;
-        cout << new_val << endl;
         if ((current_speed + new_val) < 1)
         {
             this->setSpeed(1);

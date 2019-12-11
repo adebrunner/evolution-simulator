@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <chrono>
 #include "include\animal.h"
 #include "include\world.h"
 
@@ -17,6 +18,10 @@ void setWorldSpaceAnimalPresent(vector<Animal> & animals, World * world);
 /// Sets all ContainsAnimal spaces in world to false.
 void clearWorldSpaceAnimalPresent(World * world);
 
+void resetAnimalEnergyAndFood(vector<Animal> & animals);
+
+void outputResults(vector<Animal> animals);
+
 int main()
 {
 	cout << "Welcome to the Evolution Simulator. Please enter your parameters to begin the simulation..." << endl;
@@ -27,9 +32,11 @@ int main()
 		num_animals = getNumberInput("The number of animals must be less than " + to_string((dim * 4 + 4)) + ". Enter the number of animals: ");
 	}
 	int food = getNumberInput("Enter the number of spaces that have food: ");
-	while (food > (dim*dim / 4)) {
+	while (food > (dim*dim / 2)) {
 		food = getNumberInput("The number of spaces that have food must be less than " + to_string(dim*dim / 4) + ". Enter the number of spaces that have food: ");
 	}
+
+	auto start = chrono::high_resolution_clock::now();
 
 	// Initialize world
 	World * world = new World(food, num_animals, dim);
@@ -66,7 +73,7 @@ int main()
 					}
 
 					animals.at(a).decreaseEnergy();
-					if (animals.at(a).getCurrentEnergy() == 0) {
+					if (animals.at(a).getCurrentEnergy() < 1 && animals.at(a).getFood() != 2) {
 						num_active_animals -= 1;
 					}
 				}
@@ -75,8 +82,9 @@ int main()
 
 		// See which animals survive/procreate/die after the turns are complete
 		int numChecked = 0;
+		int numToCheck = animals.size();
 		int checkIndex = 0;
-		while (numChecked < num_animals) {
+		while (numChecked < numToCheck) {
 			if (animals.at(checkIndex).getFood() == 2) {
 				// Procreate!
 				animals.push_back(animals.at(checkIndex).produceOffspring());
@@ -93,10 +101,65 @@ int main()
 			numChecked++;
 		}
 
+		// Reset animal starting locations
+		setAnimalStartingLocation(animals, world->getHouseDim());
+		setWorldSpaceAnimalPresent(animals, world);
+		resetAnimalEnergyAndFood(animals);
+		world->resetBoard(animals.size());
+		world->populateFood();
+
 		// Enter the next simulation round...
 	}
 
+	auto stop = chrono::high_resolution_clock::now();
+	auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
+
+	outputResults(animals);
+
+	cout << "Time to initialize and run simulation: " << duration.count() << " microseconds";
+
 	return 0;
+}
+
+void outputResults(vector<Animal> animals) {
+	double averageSpeed = 0.0;
+	double averageEnergy = 0.0;
+	int maxEnergy = 0;
+	int minEnergy = 10000000;
+	int maxSpeed = 0;
+	int minSpeed = 10000000;
+
+	for (int i = 0; i < animals.size(); i++) {
+		animals.at(i).printAnimal();
+		cout << endl;
+
+		averageEnergy += animals.at(i).getEnergy();
+		averageSpeed += animals.at(i).getSpeed();
+
+		if (animals.at(i).getEnergy() > maxEnergy) {
+			maxEnergy = animals.at(i).getEnergy();
+		}
+		else if (animals.at(i).getEnergy() < minEnergy) {
+			minEnergy = animals.at(i).getEnergy();
+		}
+
+		if (animals.at(i).getSpeed() > maxSpeed) {
+			maxSpeed = animals.at(i).getSpeed();
+		}
+		else if (animals.at(i).getSpeed() < minSpeed) {
+			minSpeed = animals.at(i).getSpeed();
+		}
+	}
+
+	averageEnergy = averageEnergy / (double)animals.size();
+	averageSpeed = averageSpeed / (double)animals.size();
+
+	cout << endl;
+	cout << "Final number of animals: " << animals.size() << endl;
+	cout << "Average energy: " << averageEnergy << endl;
+	cout << "Average speed: " << averageSpeed << endl;
+	cout << "Maximum energy: " << maxEnergy << endl;
+	cout << "Maximum speed: " << maxSpeed << endl;
 }
 
 int getNumberInput(string message)
@@ -105,6 +168,13 @@ int getNumberInput(string message)
 	string input = "";
 	getline(cin, input);
 	return stoi(input);
+}
+
+void resetAnimalEnergyAndFood(vector<Animal> & animals) {
+	for (int i = 0; i < animals.size(); i++) {
+		animals.at(i).setCurrentEnergy(animals.at(i).getEnergy());
+		animals.at(i).setFood(0);
+	}
 }
 
 void setAnimalStartingLocation(vector<Animal> & animals, int house_dim)
