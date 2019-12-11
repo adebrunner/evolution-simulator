@@ -17,6 +17,8 @@ void setWorldSpaceAnimalPresent(vector<Animal> & animals, World * world);
 /// Sets all ContainsAnimal spaces in world to false.
 void clearWorldSpaceAnimalPresent(World * world);
 
+void resetAnimalEnergyAndFood(vector<Animal> & animals);
+
 int main()
 {
 	cout << "Welcome to the Evolution Simulator. Please enter your parameters to begin the simulation..." << endl;
@@ -66,7 +68,7 @@ int main()
 					}
 
 					animals.at(a).decreaseEnergy();
-					if (animals.at(a).getCurrentEnergy() == 0) {
+					if (animals.at(a).getCurrentEnergy() < 1 && animals.at(a).getFood() != 2) {
 						num_active_animals -= 1;
 					}
 				}
@@ -75,8 +77,9 @@ int main()
 
 		// See which animals survive/procreate/die after the turns are complete
 		int numChecked = 0;
+		int numToCheck = animals.size();
 		int checkIndex = 0;
-		while (numChecked < num_animals) {
+		while (numChecked < numToCheck) {
 			if (animals.at(checkIndex).getFood() == 2) {
 				// Procreate!
 				animals.push_back(animals.at(checkIndex).produceOffspring());
@@ -93,6 +96,11 @@ int main()
 			numChecked++;
 		}
 
+		// Reset animal starting locations
+		setAnimalStartingLocation(animals, world->getHouseDim());
+		setWorldSpaceAnimalPresent(animals, world);
+		resetAnimalEnergyAndFood(animals);
+
 		// Enter the next simulation round...
 	}
 
@@ -105,6 +113,13 @@ int getNumberInput(string message)
 	string input = "";
 	getline(cin, input);
 	return stoi(input);
+}
+
+void resetAnimalEnergyAndFood(vector<Animal> & animals) {
+	for (int i = 0; i < animals.size(); i++) {
+		animals.at(i).setCurrentEnergy(animals.at(i).getEnergy());
+		animals.at(i).setFood(0);
+	}
 }
 
 void setAnimalStartingLocation(vector<Animal> & animals, int house_dim)
