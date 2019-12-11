@@ -1,5 +1,9 @@
 #include <iostream>
 #include <string>
+#include <vector>
+#include <stdlib.h>
+#include <time.h>
+
 
 #include <cuda.h>
 #include <thrust/host_vector.h>
@@ -123,8 +127,6 @@ public:
     // Place food in random spaces on board
     __host__ void populateFood(void)
     {
-        // Random seed
-        srand(time(NULL));
         int numFood = 0;
         while(numFood < this->food) {
             int index = rand() % this->getHouseBoardSize();
@@ -147,7 +149,7 @@ private:
 };
 
 // For every increase of 1 in speed, we decrease energy by 3 and vice versa.
-int const SPEED_TO_ENERGY_FACTOR = 3;
+int const SPEED_TO_ENERGY_FACTOR = 2;
 // Max amount of food animal can acquire
 int const MAX_FOOD = 2;
 
@@ -225,6 +227,7 @@ public:
         }
         //printf("12\n");
         // Pick a open location and assign an animal to it
+        (*(world->getBoard() + this->getLocation())).setContainsAnimal(false);
         this->setLocation(newLocation);
 
         // If there was food in the space, the animal picks it up
@@ -233,7 +236,7 @@ public:
             this->pickupFood();
         }
     }
-    __device__ Animal produceOffspring(void)
+    __host__ Animal produceOffspring(void)
     {
         // TODO: need to enforce this only happening when the animal has 2 food.
         // TODO: Need to figure out where to put animal as well.
@@ -296,34 +299,42 @@ private:
         arr = temp;
         temp = nullptr;
     }
-    __device__ void mutateAnimal(void)
+    __host__ void mutateAnimal(void)
     {
         int thirty_percent = 0;
         int current_speed = this->getSpeed();
         int new_val = 0;
 
-        // https://stackoverflow.com/questions/12614164/generating-random-numbers-with-uniform-distribution-using-thrust
-        // create a minstd_rand object to act as our source of randomness
-        thrust::default_random_engine rng;
 
         // Get thirty percent of speed
         thirty_percent = current_speed * 0.3;
         // Ensure it is at least 1
-        (thirty_percent == 0) ? 1 : thirty_percent;
+        if (thirty_percent == 0) thirty_percent = 1;
 
         // To allow for a negative change [-thirty percent, thirty percent],
         // we generate a value from 0 to 2*thirty percent then subtract thirty percent
-        // create a uniform_int_distribution to produce ints from [-thirty_percent,thirty_percent]
-        thrust::uniform_int_distribution<int> dist(-thirty_percent,thirty_percent);
-        // dist(rng) returns rand int in distribution
-        rng.discard(clock64());
-        new_val = dist(rng);
+        new_val = rand() % ((thirty_percent * 2) + 1);
+        //cout << new_val << endl;
         new_val -= thirty_percent;
-
-        this->setSpeed(current_speed + new_val);
+        cout << new_val << endl;
+        if ((current_speed + new_val) < 1)
+        {
+            this->setSpeed(1);
+        }
+        else
+            {
+            this->setSpeed(current_speed + new_val);
+        }
 
         // We inversely change energy by the amount speed changed * const factor.
-        this->setEnergy(this->getEnergy() - (thirty_percent * SPEED_TO_ENERGY_FACTOR));
+        if ((this->getEnergy() - (new_val * SPEED_TO_ENERGY_FACTOR)) < 1)
+        {
+            this->setEnergy(1);
+        }
+        else
+            {
+            this->setEnergy(this->getEnergy() - (new_val * SPEED_TO_ENERGY_FACTOR));
+        }
     }
 
     int food;          // Keeps track of how many pieces of food an animal has
@@ -464,107 +475,144 @@ int test()
 	cout << "Welcome to the Evolution Simulator. Please enter your parameters to begin the simulation..." << endl;
 	int rounds = getNumberInput("Enter the number of rounds: ");
 	int dim = getNumberInput("Enter the dimension of the world board: ");
-	int num_animals = getNumberInput("Enter the number of animals: ");
+	int num_animals_h = getNumberInput("Enter the number of animals: ");
     int start_energy = getNumberInput("Enter the starting energy of animals: ");
     int start_speed = getNumberInput("Enter the starting speed of animals: ");
-	while (num_animals > (dim * 4 + 4)) {
-		num_animals = getNumberInput("The number of animals must be less than " + to_string((dim * 4 + 4)) + ". Enter the number of animals: ");
+	while (num_animals_h > (dim * 4 + 4)) {
+		num_animals_h = getNumberInput("The number of animals must be less than " + to_string((dim * 4 + 4)) + ". Enter the number of animals: ");
 	}
 	int food = getNumberInput("Enter the number of spaces that have food: ");
-	while (food > (dim*dim/4)) {
-		food = getNumberInput("The number of spaces that have food must be less than " + to_string(dim*dim / 4) + ". Enter the number of spaces that have food: ");
+	while (food > (dim*dim/2)) {
+		food = getNumberInput("The number of spaces that have food must be less than " + to_string(dim*dim / 2) + ". Enter the number of spaces that have food: ");
 	}
 
-    // Initialize world
-    World * world_h = new World(food, num_animals, dim);
+    // Random seed
+    srand(time(NULL));
 
-	thrust::host_vector<Animal> animals_h(num_animals);
-
-	for(int i = 0; i < num_animals; i++)
+	// Vars used later
+	std::vector<Animal> temp_animal_vec;
+    int * num_animals_d = nullptr;
+    Animal * animals_pointer_d = nullptr;
+    thrust::host_vector<World> w_h(1);
+    thrust::device_vector<World> w_d;
+    World * world_h = nullptr;
+    thrust::host_vector<Animal> animals_h(num_animals_h);
+    // 1 time init
+    for(int i = 0; i < num_animals_h; i++)
     {
-	    animals_h[i].setSpeed(start_speed);
+        animals_h[i].setSpeed(start_speed);
         animals_h[i].setEnergy(start_energy);
     }
-
-	setAnimalStartingLocation(animals_h, world_h->getHouseDim());
-
-	setWorldSpaceAnimalPresent(animals_h, world_h);
-
-    thrust::device_vector<Animal> animals_d = animals_h;
-    Animal * animals_pointer_d = thrust::raw_pointer_cast(animals_d.data());
-
-	world_h->populateFood();
-
-//	for(int i = 0; i < world_h->getHouseBoardSize(); i++)
-//    {
-//	    if((world_h->getBoard()+i)->getContainsFood())
-//        {
-//	        cout << i << endl;
-//        }
-//    }
-    //cout <<"YAY\n";
-	thrust::host_vector<World> w_h(1);
-	w_h[0] = *world_h;
-    //cout <<"Yw\n";
-    //cout << w_h[0].getHouseDim() << "\n";
-	thrust::device_vector<World> w_d = w_h;
-    //cout <<"Yq\n";
-	// https://stackoverflow.com/questions/40682163/cuda-copy-inherited-class-object-to-device
-    //Allocate storage for object onto GPU and copy host object to device
-    World * world_d = thrust::raw_pointer_cast(w_d.data());
-
-    thrust::host_vector<Space> space_h(world_h->getHouseBoardSize());
-    for(int i = 0; i < world_h->getHouseBoardSize(); i++)
-    {
-        space_h[i] = *(world_h->getBoard()+i);
-    }
-
-    thrust::device_vector<Space> space_d = space_h;
-    //world_d->setBoard(thrust::raw_pointer_cast(space_d.data()));
-//    cudaMalloc((void **)&world_d,sizeof(World));
-//    cudaMemcpy(world_d,&world_h,sizeof(World),cudaMemcpyHostToDevice);
-//    //cout <<"Yfff\n";
-//Copy dynamically allocated Space objects to GPU
-//    Space ** d_par;
-//    int length = world_h->getHouseBoardSize();
-//    d_par = new Space*[length];
-//    for(int i = 0; i < length; ++i) {
-//        cudaMalloc(&d_par[i],sizeof(Space));
-//        cudaMemcpy(d_par[i],(world_h->getBoard() + i),sizeof(Space),cudaMemcpyHostToDevice);
-//    }
-//
-//    // Not the best way, but we set the spaces on the device world.
-    SetSpace<<<1,1 >>>(world_d, thrust::raw_pointer_cast(space_d.data()));
-//    gpuErrchk( cudaPeekAtLastError() );
-//    gpuErrchk( cudaDeviceSynchronize() );
-
+    thrust::device_vector<Animal> animals_d;
+    World * world_d = nullptr;
+    thrust::device_vector<Space> space_d;
+    thrust::host_vector<Space> space_h;
     int grid = 1;
-    if((num_animals / 512) > 1)
+
+    for(int roundsDone = 0; roundsDone < rounds; roundsDone++)
     {
-        grid = num_animals / 512;
+        // Initialize world
+        world_h = new World(food, num_animals_h, dim);
+
+        setAnimalStartingLocation(animals_h, world_h->getHouseDim());
+
+        setWorldSpaceAnimalPresent(animals_h, world_h);
+
+        animals_d = animals_h;
+        animals_pointer_d = thrust::raw_pointer_cast(animals_d.data());
+
+        world_h->populateFood();
+
+        w_h[0] = *world_h;
+
+        w_d = w_h;
+
+        // https://stackoverflow.com/questions/40682163/cuda-copy-inherited-class-object-to-device
+        //Allocate storage for object onto GPU and copy host object to device
+        world_d = thrust::raw_pointer_cast(w_d.data());
+
+        space_h = thrust::host_vector<Space>(world_h->getHouseBoardSize());
+        for(int i = 0; i < world_h->getHouseBoardSize(); i++)
+        {
+            space_h[i] = *(world_h->getBoard()+i);
+        }
+
+        space_d = space_h;
+
+        // Not the best way, but we set the spaces on the device world.
+        SetSpace<<<1,1 >>>(world_d, thrust::raw_pointer_cast(space_d.data()));
+        gpuErrchk( cudaPeekAtLastError() );
+        gpuErrchk( cudaDeviceSynchronize() );
+
+        if((num_animals_h / 512) > 1)
+        {
+            grid = num_animals_h / 512;
+        }
+
+
+        cudaMalloc(&num_animals_d,sizeof(int *));
+        cudaMemcpy(num_animals_d,&num_animals_h,sizeof(int *),cudaMemcpyHostToDevice);
+
+        KernelRunSim<<<grid,512>>>(animals_pointer_d, world_d, num_animals_d);
+        gpuErrchk( cudaPeekAtLastError() );
+        gpuErrchk( cudaDeviceSynchronize() );
+
+        animals_h = animals_d;
+
+        temp_animal_vec.clear();
+        for(int i = 0; i < num_animals_h; i++)
+        {
+            if(animals_h[i].getFood() == 1)
+            {
+                animals_h[i].setFood(0);
+                temp_animal_vec.push_back(animals_h[i]);
+            }
+            else if(animals_h[i].getFood() == 2)
+            {
+                animals_h[i].setFood(0);
+                temp_animal_vec.push_back(animals_h[i]);
+                // Push back animals mutated offspring if it got 2 food
+                temp_animal_vec.push_back(animals_h[i].produceOffspring());
+            }
+        }
+
+        // Change number of animals to those that survived and new ones.
+        num_animals_h = temp_animal_vec.size();
+        cudaMemcpy(num_animals_d,&num_animals_h,sizeof(int *),cudaMemcpyHostToDevice);
+
+
+        animals_h = thrust::host_vector<Animal>(num_animals_h);
+        for(int i = 0; i < num_animals_h; i++)
+        {
+            animals_h[i] = temp_animal_vec[i];
+        }
+
+        // Delete old world
+        delete world_h;
+
+        cout << "End of Round " << roundsDone + 1 << "\n\n\n";
     }
 
-    int * num_animals_d;
-    cudaMalloc(&num_animals_d,sizeof(int *));
-    cudaMemcpy(num_animals_d,&num_animals,sizeof(int *),cudaMemcpyHostToDevice);
+//    world_h = new World(food, num_animals_h, dim);
+//    setAnimalStartingLocation(animals_h, world_h->getHouseDim());
+//    setWorldSpaceAnimalPresent(animals_h, world_h);
 
-    //cout << world_h->getHouseDim() <<" SEE\n";
+//    animals_d = animals_h;
+//    animals_pointer_d = thrust::raw_pointer_cast(animals_d.data());
+//
+//    world_h->populateFood();
+//    w_h[0] = *world_h;
+//    w_d = w_h;
+//
+//    world_d = thrust::raw_pointer_cast(w_d.data());
+//
+//    space_h = thrust::host_vector<Space>(world_h->getHouseBoardSize());
+//    for(int i = 0; i < world_h->getHouseBoardSize(); i++)
+//    {
+//        space_h[i] = *(world_h->getBoard()+i);
+//    }
 
-    for(int i = 0; i < num_animals; i++)
-    {
-        cout << i << " " << animals_h[i].getFood() << endl;
-    }
-
-	KernelRunSim<<<grid,512>>>(animals_pointer_d, world_d, num_animals_d);
-    //printf("\t312\n");
-    gpuErrchk( cudaPeekAtLastError() );
-    gpuErrchk( cudaDeviceSynchronize() );
-    animals_h = animals_d;
-
-    for(int i = 0; i < num_animals; i++)
-    {
-        cout << i << " " << animals_h[i].getFood() << endl;
-    }
+// TODO: Output results.
 
 	return 0;
 }
