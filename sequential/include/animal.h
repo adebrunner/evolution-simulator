@@ -10,7 +10,7 @@ int const SPEED_TO_ENERGY_FACTOR = 2;
 class Animal
 {
 public:
-    Animal(int sp=1, int e=5, int l=0)
+    Animal(int sp=3, int e=5, int l=0)
     {
 		setFood(0);
         setSpeed(sp);
@@ -36,6 +36,7 @@ public:
 
     void move(World* world);
     Animal produceOffspring(void);
+	void printAnimal();
 
 private:
 	int pickNewLocation(World* world, std::vector<int> available);

@@ -1,6 +1,7 @@
 #include <vector>
 #include <stdlib.h>
 #include <time.h>
+#include <iostream>
 
 #include "../include/animal.h"
 
@@ -38,6 +39,7 @@ void Animal::move(World* world) {
 	}
 
 	// Pick a open location and assign an animal to it
+	(*(world->getBoard() + this->getLocation())).setContainsAnimal(false);
 	this->setLocation(newLocation);	
 
 	// If there was food in the space, the animal picks it up
@@ -99,4 +101,9 @@ Animal Animal::produceOffspring(void)
     // But add a mutation
     new_animal.mutateAnimal();
     return new_animal;
+}
+
+void Animal::printAnimal() {
+	std::cout << "Animal in location " << this->getLocation() << ":" << std::endl;
+	std::cout << "Energy: " << this->getEnergy() << ", Speed: " << this->getSpeed() << std::endl;
 }
