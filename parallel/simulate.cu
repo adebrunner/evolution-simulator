@@ -15,6 +15,7 @@ using std::cout;
 using std::endl;
 using std::string;
 using std::to_string;
+using std::vector;
 // https://stackoverflow.com/questions/14038589/what-is-the-canonical-way-to-check-for-errors-using-the-cuda-runtime-api
 #define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
@@ -176,17 +177,14 @@ public:
     __device__ __host__ int getLocation() { return this->location; }
 
     __device__ void move(World* world) {
-        //printf("1\n");
         int options_left = 4;
         // Check surrounding squares to determine which are available
         int * available = new int(options_left);
-
         available[0] = getLocation() + 1;
         available[1] = getLocation() - 1;
         available[2] = getLocation() - world->getHouseDim();
         available[3] = getLocation() + world->getHouseDim();
 
-        //printf("11\n");
         for (int i = 0; i < options_left; i++)
         {
             // If the space is outside bounds or has an animal in it, we can't move there
@@ -198,14 +196,10 @@ public:
                 i--;
             }
         }
-        //printf("111\n");
-//        for(int n = 0; n < options_left; n++ )
-//        {
-//            printf("%d\n", available[n]);
-//        }
+
         int newLocation = this->pickNewLocation(world, available, options_left);
-        //printf("%d 1.12\n", newLocation);
         // Update the world to reflect that an animal is now in this space
+
         while (!(*(world->getBoard() + newLocation)).putAnimal()) {
             for (int i = 0; i < options_left; i++)
             {
@@ -220,12 +214,12 @@ public:
             // If you can't move to any immediate spaces, decrease energy and stay put
             if (options_left == 0)
             {
+                delete [] available;
                 return;
             }
 
             newLocation = this->pickNewLocation(world, available, options_left);
         }
-        //printf("12\n");
         // Pick a open location and assign an animal to it
         (*(world->getBoard() + this->getLocation())).setContainsAnimal(false);
         this->setLocation(newLocation);
@@ -235,6 +229,7 @@ public:
             (*(world->getBoard() + this->getLocation())).setContainsFood(false);
             this->pickupFood();
         }
+        delete [] available;
     }
     __host__ Animal produceOffspring(void)
     {
@@ -249,26 +244,25 @@ public:
         return new_animal;
     }
 
+    __host__ void printAnimal(void)
+    {
+        cout << "Animal in location " << this->getLocation() << ":" << endl;
+        cout << "Energy: " << this->getEnergy() << ", Speed: " << this->getSpeed() << endl;
+    }
+
 private:
     __device__ int pickNewLocation(World* world, int * available, int options_left) {
-        //printf("2\n");
-        //printf("3.0: %d\n", options_left);
-        //printf("2.0\n");
 
         for (int i = 0; i < options_left; i++)
         {
-            //printf("3.1\n");
-            //printf("%d\n", available[i]);
             if ((*(world->getBoard() + available[i])).getContainsFood())
             {
-                //printf("MAGIC\n");
                 // move to the first location found that contains food
                 return available[i];
             }
         }
-        //printf("2.1\n");
         // https://stackoverflow.com/questions/12614164/generating-random-numbers-with-uniform-distribution-using-thrust
-        // create a minstd_rand object to act as our source of randomness
+        // create a default_random_engine object to act as our source of randomness
         thrust::default_random_engine rng;
         // create a uniform_int_distribution to produce ints from [0,options_left]
         thrust::uniform_int_distribution<int> dist(0,options_left-1);
@@ -276,7 +270,6 @@ private:
         // dist(rng) returns rand int in distribution
         int x = dist(rng);
 
-       // printf("3: %d\n", x);
         return available[x];
     }
     __device__ void removeIndex(int index, int *& arr, int & options_left)
@@ -425,38 +418,21 @@ __global__ void KernelRunSim(Animal * animals_vec_d, World * world_d, int * num_
     {
         return;
     }
-//    ////cout << world_d->getBoard()->getIsHome() << endl;
-//    //bool x = world_d->getBoard()->getIsHome();
-//    ////printf("%s\n", x ? "true" : "false");
-//    ////printf(world_d->getBoard()->getIsHome() + "\n");
-//    ////printf("\tCopying data\n");
+
     for(int i = 0; i < animals_vec_d[index].getEnergy(); i++)
     {
         for(int j = 0; j < animals_vec_d[index].getSpeed(); j++)
         {
-            //printf("%d premove loc %d\n", index, animals_vec_d[index].getLocation());
             (animals_vec_d[index]).move(world_d);
-            //printf("%d postmove loc %d\n", index, animals_vec_d[index].getLocation());
 
             // if max food acquired, animal will stop moving.
             if(animals_vec_d[index].getFood() == MAX_FOOD)
             {
-               // printf("%d won!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n", index);
                 i = animals_vec_d[index].getEnergy();
                 break;
             }
         }
-//        if((world_d->getBoard()+i)->getContainsFood())
-//        {
-//            printf("%d\n", i);
-//        }
-
-        //world_d->getBoard()->putAnimal();
-       // (world_d->getBoard() +  i)->getIsHome();
     }
-    printf("%d food amount %d\n", index, animals_vec_d[index].getFood());
-
-
 
     return;
 }
@@ -466,6 +442,47 @@ __global__ void SetSpace(World * world_d, Space * b)
 {
     world_d->setBoard(b);
     return;
+}
+
+void outputResults(vector<Animal> animals) {
+    double averageSpeed = 0.0;
+    double averageEnergy = 0.0;
+    int maxEnergy = 0;
+    int minEnergy = 10000000;
+    int maxSpeed = 0;
+    int minSpeed = 10000000;
+
+    for (int i = 0; i < animals.size(); i++) {
+        animals.at(i).printAnimal();
+        cout << endl;
+
+        averageEnergy += animals.at(i).getEnergy();
+        averageSpeed += animals.at(i).getSpeed();
+
+        if (animals.at(i).getEnergy() > maxEnergy) {
+            maxEnergy = animals.at(i).getEnergy();
+        }
+        else if (animals.at(i).getEnergy() < minEnergy) {
+            minEnergy = animals.at(i).getEnergy();
+        }
+
+        if (animals.at(i).getSpeed() > maxSpeed) {
+            maxSpeed = animals.at(i).getSpeed();
+        }
+        else if (animals.at(i).getSpeed() < minSpeed) {
+            minSpeed = animals.at(i).getSpeed();
+        }
+    }
+
+    averageEnergy = averageEnergy / (double)animals.size();
+    averageSpeed = averageSpeed / (double)animals.size();
+
+    cout << endl;
+    cout << "Final number of animals: " << animals.size() << endl;
+    cout << "Average energy: " << averageEnergy << endl;
+    cout << "Average speed: " << averageSpeed << endl;
+    cout << "Maximum energy: " << maxEnergy << endl;
+    cout << "Maximum speed: " << maxSpeed << endl;
 }
 
 int test()
@@ -488,7 +505,7 @@ int test()
     srand(time(NULL));
 
 	// Vars used later
-	std::vector<Animal> temp_animal_vec;
+	vector<Animal> temp_animal_vec;
     int * num_animals_d = nullptr;
     Animal * animals_pointer_d = nullptr;
     thrust::host_vector<World> w_h(1);
@@ -576,6 +593,11 @@ int test()
 
         // Change number of animals to those that survived and new ones.
         num_animals_h = temp_animal_vec.size();
+        // If all animals failed/died, exit sim
+        if(num_animals_h == 0)
+        {
+            break;
+        }
         cudaMemcpy(num_animals_d,&num_animals_h,sizeof(int *),cudaMemcpyHostToDevice);
 
 
@@ -587,34 +609,11 @@ int test()
 
         // Delete old world
         delete world_h;
-
-        cout << "End of Round " << roundsDone + 1 << "\n\n\n";
     }
 
-//    world_h = new World(food, num_animals_h, dim);
-//    setAnimalStartingLocation(animals_h, world_h->getHouseDim());
-//    setWorldSpaceAnimalPresent(animals_h, world_h);
-
-//    animals_d = animals_h;
-//    animals_pointer_d = thrust::raw_pointer_cast(animals_d.data());
-//
-//    world_h->populateFood();
-//    w_h[0] = *world_h;
-//    w_d = w_h;
-//
-//    world_d = thrust::raw_pointer_cast(w_d.data());
-//
-//    space_h = thrust::host_vector<Space>(world_h->getHouseBoardSize());
-//    for(int i = 0; i < world_h->getHouseBoardSize(); i++)
-//    {
-//        space_h[i] = *(world_h->getBoard()+i);
-//    }
-
-// TODO: Output results.
+    outputResults(temp_animal_vec);
 
 	return 0;
 }
-
-
 
 int main(void){return test();}
