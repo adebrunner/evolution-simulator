@@ -7,7 +7,7 @@ CUDAPATH = /usr/local/cuda
 NVCCFLAGS = -I$(CUDAPATH)/include
 
 gpu:
-	$(NVCC) $(NVCCFLAGS) *.cu
+	$(NVCC) $(NVCCFLAGS) *.cu -o parallel_run.out
 
 clean:
 	rm *.o
