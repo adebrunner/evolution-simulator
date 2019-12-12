@@ -57,8 +57,6 @@ int Animal::pickNewLocation(World* world, std::vector<int> available) {
 		}
 	}
 
-	// Pick a random available spot
-	srand(time(NULL));
 	return available.at(rand() % available.size());
 }
 
@@ -68,30 +66,33 @@ void Animal::mutateAnimal(void)
     int current_speed = this->getSpeed();
     int new_val = 0;
 
-    srand(time(NULL));
     // Get thirty percent of speed
     thirty_percent = current_speed * 0.3;
     // Ensure it is at least 1
-	if (thirty_percent == 0) thirty_percent = 1;
+    if (thirty_percent == 0) thirty_percent = 1;
 
     // To allow for a negative change [-thirty percent, thirty percent],
     // we generate a value from 0 to 2*thirty percent then subtract thirty percent
-    new_val = rand() % (thirty_percent * 2);
+    new_val = rand() % ((thirty_percent * 2) + 1);
     new_val -= thirty_percent;
-	if ((current_speed + new_val) < 1) {
-		this->setSpeed(1);
-	}
-	else {
-		this->setSpeed(current_speed + new_val);
-	}
+    if ((current_speed + new_val) < 1)
+    {
+        this->setSpeed(1);
+    }
+    else
+    {
+        this->setSpeed(current_speed + new_val);
+    }
 
     // We inversely change energy by the amount speed changed * const factor.
-	if ((this->getEnergy() - (new_val * SPEED_TO_ENERGY_FACTOR)) < 1) {
-		this->setEnergy(1);
-	}
-	else {
-		this->setEnergy(this->getEnergy() - (new_val * SPEED_TO_ENERGY_FACTOR));
-	}
+    if ((this->getEnergy() - (new_val * SPEED_TO_ENERGY_FACTOR)) < 1)
+    {
+        this->setEnergy(1);
+    }
+    else
+    {
+        this->setEnergy(this->getEnergy() - (new_val * SPEED_TO_ENERGY_FACTOR));
+    }
 }
 
 Animal Animal::produceOffspring(void)

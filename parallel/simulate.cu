@@ -3,6 +3,7 @@
 #include <vector>
 #include <stdlib.h>
 #include <time.h>
+#include <chrono>
 
 
 #include <cuda.h>
@@ -491,15 +492,16 @@ int test()
 	int rounds = getNumberInput("Enter the number of rounds: ");
 	int dim = getNumberInput("Enter the dimension of the world board: ");
 	int num_animals_h = getNumberInput("Enter the number of animals: ");
-    int start_energy = getNumberInput("Enter the starting energy of animals: ");
-    int start_speed = getNumberInput("Enter the starting speed of animals: ");
 	while (num_animals_h > (dim * 4 + 4)) {
 		num_animals_h = getNumberInput("The number of animals must be less than " + to_string((dim * 4 + 4)) + ". Enter the number of animals: ");
 	}
+    int start_energy = getNumberInput("Enter the starting energy of animals: ");
+    int start_speed = getNumberInput("Enter the starting speed of animals: ");
 	int food = getNumberInput("Enter the number of spaces that have food: ");
-	while (food > (dim*dim/2)) {
+	while (food > (dim*dim*3/4)) {
 		food = getNumberInput("The number of spaces that have food must be less than " + to_string(dim*dim / 2) + ". Enter the number of spaces that have food: ");
 	}
+
 
     // Random seed
     srand(time(NULL));
@@ -507,6 +509,8 @@ int test()
 	// Vars used later
 	vector<Animal> temp_animal_vec;
     int * num_animals_d = nullptr;
+    cudaMalloc(&num_animals_d,sizeof(int *));
+    cudaMemcpy(num_animals_d,&num_animals_h,sizeof(int *),cudaMemcpyHostToDevice);
     Animal * animals_pointer_d = nullptr;
     thrust::host_vector<World> w_h(1);
     thrust::device_vector<World> w_d;
@@ -523,12 +527,12 @@ int test()
     thrust::device_vector<Space> space_d;
     thrust::host_vector<Space> space_h;
     int grid = 1;
+    // Initialize world
+    world_h = new World(food, num_animals_h, dim);
 
+    auto start = std::chrono::high_resolution_clock::now();
     for(int roundsDone = 0; roundsDone < rounds; roundsDone++)
     {
-        // Initialize world
-        world_h = new World(food, num_animals_h, dim);
-
         setAnimalStartingLocation(animals_h, world_h->getHouseDim());
 
         setWorldSpaceAnimalPresent(animals_h, world_h);
@@ -563,10 +567,6 @@ int test()
         {
             grid = num_animals_h / 512;
         }
-
-
-        cudaMalloc(&num_animals_d,sizeof(int *));
-        cudaMemcpy(num_animals_d,&num_animals_h,sizeof(int *),cudaMemcpyHostToDevice);
 
         KernelRunSim<<<grid,512>>>(animals_pointer_d, world_d, num_animals_d);
         gpuErrchk( cudaPeekAtLastError() );
@@ -607,11 +607,20 @@ int test()
             animals_h[i] = temp_animal_vec[i];
         }
 
-        // Delete old world
-        delete world_h;
+        for(int i = 0; i < world_h->getHouseBoardSize(); i++)
+        {
+            (world_h->getBoard() + i)->setContainsAnimal(false);
+            (world_h->getBoard() + i)->setIsHome(false);
+            (world_h->getBoard() + i)->setContainsFood(false);
+        }
     }
 
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+
     outputResults(temp_animal_vec);
+
+    cout << "Time to initialize and run simulation: " << duration.count() << " microseconds";
 
 	return 0;
 }

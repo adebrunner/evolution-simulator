@@ -2,8 +2,9 @@
 #include <string>
 #include <vector>
 #include <chrono>
-#include "include\animal.h"
-#include "include\world.h"
+#include "include/animal.h"
+#include "include/world.h"
+#include "include/space.h"
 
 using namespace std;
 
@@ -31,6 +32,8 @@ int main()
 	while (num_animals > (dim * 4 + 4)) {
 		num_animals = getNumberInput("The number of animals must be less than " + to_string((dim * 4 + 4)) + ". Enter the number of animals: ");
 	}
+    int start_energy = getNumberInput("Enter the starting energy of animals: ");
+    int start_speed = getNumberInput("Enter the starting speed of animals: ");
 	int food = getNumberInput("Enter the number of spaces that have food: ");
 	while (food > (dim*dim / 2)) {
 		food = getNumberInput("The number of spaces that have food must be less than " + to_string(dim*dim / 4) + ". Enter the number of spaces that have food: ");
@@ -43,6 +46,11 @@ int main()
 
 	// Put animals in the world
 	vector<Animal> animals(num_animals);
+    for(int i = 0; i < animals.size(); i++)
+    {
+        animals[i].setSpeed(start_speed);
+        animals[i].setEnergy(start_energy);
+    }
 	setAnimalStartingLocation(animals, world->getHouseDim());
 	setWorldSpaceAnimalPresent(animals, world);
 

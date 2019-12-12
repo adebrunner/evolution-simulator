@@ -3,7 +3,7 @@
 COM = g++
 
 cpu:
-	$(COM) *.cpp -o sequential_run.out
+	$(COM) *.cpp src/* -o sequential_run.out
 
 clean:
 	rm *.o
